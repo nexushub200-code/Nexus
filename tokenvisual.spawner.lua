@@ -12,16 +12,13 @@ local tInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Ou
 
 local function fCom(n)
     local f = tostring(n):gsub(",", "")
-
     while true do
         local k
         f, k = string.gsub(f, "^(-?%d+)(%d%d%d)", "%1,%2")
-
         if k == 0 then
             break
         end
     end
-
     return f
 end
 
@@ -92,7 +89,7 @@ CT.TextSize = 10
 CT.Font = Enum.Font.Code
 CT.TextXAlignment = Enum.TextXAlignment.Left
 
--- Close Button (X)
+-- Close Button
 local CB = Instance.new("TextButton", HB)
 CB.Size = UDim2.new(0, 25, 0, 25)
 CB.Position = UDim2.new(1, -35, 0, 12)
@@ -103,7 +100,7 @@ CB.Font = Enum.Font.SourceSansBold
 
 Instance.new("UICorner", CB).CornerRadius = UDim.new(0, 6)
 
--- Minimize Button (-)
+-- Minimize Button
 local MB = Instance.new("TextButton", HB)
 MB.Size = UDim2.new(0, 25, 0, 25)
 MB.Position = UDim2.new(1, -65, 0, 12)
@@ -114,7 +111,7 @@ MB.Font = Enum.Font.SourceSansBold
 
 Instance.new("UICorner", MB).CornerRadius = UDim.new(0, 6)
 
--- Float/Mini Button
+-- Float / Mini Button
 local NB = Instance.new("TextButton", SG)
 NB.Size = UDim2.new(0, 0, 0, 0)
 NB.Position = UDim2.new(0, 10, 0.5, -20)
@@ -170,7 +167,7 @@ local TX = Instance.new("TextBox", MF)
 TX.Size = UDim2.new(1, -40, 0, 35)
 TX.Position = UDim2.new(0, 20, 0, 110)
 TX.BackgroundColor3 = Color3.fromRGB(12, 8, 8)
-TX.Text = "82,927,291"
+TX.Text = "82927291"
 TX.TextColor3 = Color3.fromRGB(255, 255, 255)
 TX.TextSize = 14
 TX.Font = Enum.Font.Code
@@ -180,6 +177,15 @@ Instance.new("UICorner", TX).CornerRadius = UDim.new(0, 6)
 local TXS = Instance.new("UIStroke", TX)
 TXS.Color = Color3.fromRGB(60, 25, 25)
 TXS.Thickness = 1
+
+-- Number-Only Restriction Guard
+TX:GetPropertyChangedSignal("Text"):Connect(function()
+    local clean = TX.Text:gsub("%D", "")
+
+    if TX.Text ~= clean then
+        TX.Text = clean
+    end
+end)
 
 -- Apply Button
 local AB = Instance.new("TextButton", MF)
@@ -297,8 +303,7 @@ local function lockUI()
                     u.Parent.Parent and
                     u.Parent.Parent.Name:lower() or ""
 
-                -- Location 1 & 2:
-                -- Main Balance + Buy Tokens Menu Balance
+                -- Location 1 & 2
                 if string.find(lowTxt, "tokens:")
                     or string.find(lowTxt, "token:")
                     or pName == "tokens"
@@ -306,7 +311,7 @@ local function lockUI()
 
                     table.insert(targets, u)
 
-                -- Pure numbers / comma-formatted numbers
+                -- Main panel numeric balance
                 elseif string.find(txt, "^[%d,]+$")
                     and (
                         string.find(pName, "currency")
@@ -319,8 +324,7 @@ local function lockUI()
                         table.insert(targets, u)
                     end
 
-                -- Location 3:
-                -- Trading Frame / Panels
+                -- Trading frame / panels
                 elseif string.find(pName, "trade")
                     or string.find(gpName, "trade")
                     or string.find(pName, "deal") then
@@ -336,7 +340,7 @@ local function lockUI()
     end)
 end
 
--- Animated Switch Toggle Event
+-- Animated Switch Toggle
 ToggleBG.MouseButton1Click:Connect(function()
 
     isOn = not isOn
@@ -372,8 +376,11 @@ ToggleBG.MouseButton1Click:Connect(function()
 
         AB.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-        CL.Text = " >> Core Locked. UI Engine ready to inject."
-        CL.TextColor3 = Color3.fromRGB(250, 180, 50)
+        CL.Text =
+            " >> Core Locked. UI Engine ready to inject."
+
+        CL.TextColor3 =
+            Color3.fromRGB(250, 180, 50)
 
         lockUI()
 
@@ -406,10 +413,14 @@ ToggleBG.MouseButton1Click:Connect(function()
             {BackgroundColor3 = Color3.fromRGB(45, 20, 22)}
         ):Play()
 
-        AB.TextColor3 = Color3.fromRGB(180, 130, 130)
+        AB.TextColor3 =
+            Color3.fromRGB(180, 130, 130)
 
-        CL.Text = " >> System Paused. Tokens retained safely."
-        CL.TextColor3 = Color3.fromRGB(239, 68, 68)
+        CL.Text =
+            " >> System Paused. Tokens retained safely."
+
+        CL.TextColor3 =
+            Color3.fromRGB(239, 68, 68)
     end
 end)
 
@@ -417,8 +428,12 @@ end)
 AB.MouseButton1Click:Connect(function()
 
     if not isOn then
-        CL.Text = " >> System Paused. Toggle the crimson switch first."
-        CL.TextColor3 = Color3.fromRGB(239, 68, 68)
+        CL.Text =
+            " >> ERROR: Turn ON the Crimson Switch first!"
+
+        CL.TextColor3 =
+            Color3.fromRGB(239, 68, 68)
+
         return
     end
 
@@ -432,24 +447,27 @@ AB.MouseButton1Click:Connect(function()
         pcall(function()
 
             if string.find(u.Text:lower(), "tokens:") then
+
                 u.Text = "Tokens: " .. cc
 
             elseif string.find(u.Text:lower(), "token:") then
+
                 u.Text = "Token: " .. cc
 
             else
+
                 u.Text = cc
             end
-
         end)
     end
 
     CL.Text =
         " >> INJECTED! Visual token matrix forced to ["
         .. cc
-        .. "]"
+        .. "]."
 
-    CL.TextColor3 = Color3.fromRGB(50, 220, 100)
+    CL.TextColor3 =
+        Color3.fromRGB(50, 220, 100)
 end)
 
 -- Background Persistence Loop
@@ -478,7 +496,10 @@ task.spawn(function()
                         u.Text = "Token: " .. cc
 
                     elseif u.Text ~= cc
-                        and not string.find(u.Text:lower(), "token") then
+                        and not string.find(
+                            u.Text:lower(),
+                            "token"
+                        ) then
 
                         u.Text = cc
                     end
