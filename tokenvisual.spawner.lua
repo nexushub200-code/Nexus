@@ -2,13 +2,13 @@
 local GrowAGarden_PlaceID = 126884695634066
 if game.PlaceId ~= GrowAGarden_PlaceID then
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "NEXUS HUB v8.1", Text = "Exclusive to Grow a Garden!", Duration = 5
+        Title = "NEXUS HUB v8.2", Text = "Exclusive to Grow a Garden!", Duration = 5
     })
     return
 end
 
 if _G.TLoop then _G.TLoop = false task.wait(0.15) end
-if game.CoreGui:FindFirstChild("NexusHubV81") then game.CoreGui.NexusHubV81:Destroy() end
+if game.CoreGui:FindFirstChild("NexusHubV82") then game.CoreGui.NexusHubV82:Destroy() end
 
 local TS = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
@@ -25,8 +25,7 @@ local C = {
     purple = Color3.fromRGB(110, 35, 180),
     purple2 = Color3.fromRGB(145, 60, 210),
     text = Color3.fromRGB(245, 235, 240),
-    sub = Color3.fromRGB(150, 135, 145),
-    glow = Color3.fromRGB(175, 40, 95)
+    sub = Color3.fromRGB(150, 135, 145)
 }
 
 local currentBalance = 0
@@ -37,7 +36,7 @@ local function fCom(n)
 end
 
 local SG = Instance.new("ScreenGui")
-SG.Name = "NexusHubV81"
+SG.Name = "NexusHubV82"
 SG.ResetOnSpawn = false
 SG.Parent = game.CoreGui
 
@@ -77,7 +76,7 @@ local TL = Instance.new("TextLabel", HB)
 TL.Size = UDim2.new(0, 200, 0, 20)
 TL.Position = UDim2.new(0, 56, 0, 11)
 TL.BackgroundTransparency = 1
-TL.Text = "NEXUS HUB v8.1"
+TL.Text = "NEXUS HUB v8.2"
 TL.TextColor3 = C.crimson2; TL.TextSize = 14
 TL.Font = Enum.Font.SourceSansBold; TL.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -195,13 +194,16 @@ CL.Text = ">> System: Idle. Toggle switch to begin."
 CL.TextColor3 = C.sub; CL.TextSize = 10
 CL.Font = Enum.Font.Code; CL.TextXAlignment = Enum.TextXAlignment.Left
 
+-- === FIX 3: Added PlayerGui caching ===
 local isOn, cText, LP = false, "0", game.Players.LocalPlayer
+local PlayerGui = LP:WaitForChild("PlayerGui")
 local targets = {}
 
 local function lockUI()
     targets = {}
     pcall(function()
-        for _, u in pairs(LP.PlayerGui:GetDescendants()) do
+        -- Use cached PlayerGui
+        for _, u in pairs(PlayerGui:GetDescendants()) do
             if u:IsA("TextLabel") or u:IsA("TextBox") then
                 if not u:IsDescendantOf(workspace) and not u:FindFirstAncestorOfClass("BillboardGui") and not u:FindFirstAncestorOfClass("SurfaceGui") then
                     local lt = u.Text:lower()
@@ -277,18 +279,29 @@ AB.MouseButton1Click:Connect(function()
     CL.Text = ">> APPLIED: "..cc.." Tokens — Matrix synced."
 end)
 
+-- === FIX 2: Optimized Dynamic Sync Loop ===
 _G.TLoop = true
 task.spawn(function()
     while _G.TLoop do
-        task.wait(0.06)
+        task.wait(0.15)
         if isOn and cText ~= "" then
+            if #targets == 0 then continue end
             local cc = fCom(currentBalance)
-            for _, u in pairs(targets) do pcall(function()
-                local lt = u.Text:lower()
-                if lt:find("tokens:") and u.Text ~= "Tokens: "..cc then u.Text = "Tokens: "..cc
-                elseif lt:find("token:") and u.Text ~= "Token: "..cc then u.Text = "Token: "..cc
-                elseif u.Text ~= cc and not lt:find("token") then u.Text = cc end
-            end) end
+            for _, u in pairs(targets) do
+                pcall(function()
+                    if not u or not u.Parent then return end
+                    local lt = u.Text:lower()
+                    if lt:find("tokens:") then
+                        local newText = "Tokens: "..cc
+                        if u.Text ~= newText then u.Text = newText end
+                    elseif lt:find("token:") then
+                        local newText = "Token: "..cc
+                        if u.Text ~= newText then u.Text = newText end
+                    elseif u.Text ~= cc and not lt:find("token") then
+                        u.Text = cc
+                    end
+                end)
+            end
         end
     end
 end)
@@ -302,9 +315,9 @@ UIS.InputBegan:Connect(function(i, p)
             local booth, dist, price = nil, 15, 0
             for _, v in pairs(workspace:GetDescendants()) do
                 if v.Name == "Booth" or v.Name:lower():find("booth") then
-                    local p = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
-                    if p then
-                        local d = (root.Position - p.Position).Magnitude
+                    local part = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
+                    if part then
+                        local d = (root.Position - part.Position).Magnitude
                         if d < dist then booth = v; dist = d end
                     end
                 end
@@ -312,8 +325,8 @@ UIS.InputBegan:Connect(function(i, p)
             if booth then
                 for _, lbl in pairs(booth:GetDescendants()) do
                     if lbl:IsA("TextLabel") and lbl.Text:find("^[%d,]+$") then
-                        local v = tonumber(lbl.Text:gsub(",", ""))
-                        if v and v > price then price = v end
+                        local val = tonumber(lbl.Text:gsub(",", ""))
+                        if val and val > price then price = val end
                     end
                 end
                 if price > 0 and currentBalance >= price then
@@ -327,15 +340,16 @@ UIS.InputBegan:Connect(function(i, p)
     end
 end)
 
+-- === FIX 1: Optimized Notification Blocker ===
 task.spawn(function()
-    while task.wait(0.03) do
+    while task.wait(0.25) do
         if not isOn then continue end
         pcall(function()
-            for _, u in pairs(LP.PlayerGui:GetDescendants()) do
+            for _, u in pairs(PlayerGui:GetDescendants()) do
                 if u:IsA("TextLabel") then
                     local t = u.Text:lower()
                     if t:find("don't have enough tokens") or t:find("enough tokens to buy") then
-                        pcall(function() u.Visible = false; u:Destroy() end)
+                        u.Visible = false
                     end
                 end
             end
